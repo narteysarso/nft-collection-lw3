@@ -53,8 +53,8 @@ contract CryptoDevs is ERC721Enumerable, Ownable {
     }
 
     /**
-    *@dev startPresale starts a presale for the whitelisted addresses
-      */
+     *@dev startPresale starts a presale for the whitelisted addresses
+     */
     function startPresale() public onlyOwner {
         presaleStarted = true;
         //set presaleEnded time as current timestamp + 5 minutes
@@ -63,8 +63,14 @@ contract CryptoDevs is ERC721Enumerable, Ownable {
     }
 
     function presaleMint() public payable onlyWhenNotPaused {
-        require(presaleStarted && block.timestamp < presaleEnded, "Presale is not running");
-        require(whitelist.whitelistedAddresses(msg.sender), "You are not whitelisted");
+        require(
+            presaleStarted && block.timestamp < presaleEnded,
+            "Presale is not running"
+        );
+        require(
+            whitelist.whitelistedAddresses(msg.sender),
+            "You are not whitelisted"
+        );
         require(tokenIds < maxTokenIds, "Exceeded maximum Crypto Devs supply");
         require(msg.value >= _price, "Ether sent is not correct");
 
@@ -77,43 +83,53 @@ contract CryptoDevs is ERC721Enumerable, Ownable {
     }
 
     /**
-    *@dev mint allows a user to mint 1 NFT per transaction after the presale has ended
+     *@dev mint allows a user to mint 1 NFT per transaction after the presale has ended
      */
-     function mint() payable public onlyWhenNotPaused {
-         require(presaleStarted && block.timestamp >= presaleEnded, "Presale has not started yet");
-         require(tokenIds < maxTokenIds, "Exceeded maximum Crypto Devs supply");
-         require(msg.value >= _price, "Ether sent is not correct");
+    function mint() public payable onlyWhenNotPaused {
+        require(
+            presaleStarted && block.timestamp >= presaleEnded,
+            "Presale has not started yet"
+        );
+        require(tokenIds < maxTokenIds, "Exceeded maximum Crypto Devs supply");
+        require(msg.value >= _price, "Ether sent is not correct");
 
-         tokenIds += 1;
+        tokenIds += 1;
 
-         _safeMint(msg.sender, tokenIds);
-     }
+        _safeMint(msg.sender, tokenIds);
+    }
 
+    /**
+     * @dev _baseURI overides the Openzeppelin's ERC721 implementation which by default
+     * returned an empty string for the baseURI
+     */
+    function _baseURI() internal view virtual override returns (string memory) {
+        return _baseTokenURI;
+    }
+    
     /**
     *@dev setPaused make the contract paused or unpaused
      */
-     function setPaused(bool val) public onlyOwner{
-         _paused = val;
-     }
+    function setPaused(bool val) public onlyOwner {
+        _paused = val;
+    }
 
-     /**
+    /**
      *@dev withdraw sends all the ether in the contract
      * to the owner of the contract
-      */
+     */
 
-      function withdraw() public onlyOwner{
-          address _owner = owner();
-          uint256 amount = address(this).balance;
+    function withdraw() public onlyOwner {
+        address _owner = owner();
+        uint256 amount = address(this).balance;
 
-          (bool sent, ) = _owner.call{value: amount}("");
+        (bool sent, ) = _owner.call{value: amount}("");
 
-          require(sent, "Failed to send Ether");
-      }
+        require(sent, "Failed to send Ether");
+    }
 
+    //Function to receive Ether. msg.data must be empty
+    receive() external payable {}
 
-      //Function to receive Ether. msg.data must be empty
-      receive() external payable{}
-
-      //Fallback function is called if msg.data is set
-      fallback() external payable{}
+    //Fallback function is called if msg.data is set
+    fallback() external payable {}
 }
